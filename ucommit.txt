@@ -1,1 +1,1 @@
-Se acomodo el tamaño de ListView
+Se agrega .gitignore y pushover file

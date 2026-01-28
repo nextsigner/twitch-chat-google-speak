@@ -25,7 +25,7 @@ ApplicationWindow{
             //showMode(app.editable)
         }
     }
-    Unik{id: unik}
+    Unik{id: u}
     Audio {
         id: mpRing
         source: 'file:/home/ns/nsp/uda/twitch-chat/sounds/ring_1.mp3';
@@ -241,7 +241,7 @@ ApplicationWindow{
                                             }
                                             if(tCheck.e){
                                                 //Qt.quit()
-                                                //sendNot(de, msg)
+                                                sendNot(de, msg)
                                                 //running=true
                                                 return
                                             }
@@ -294,24 +294,31 @@ ApplicationWindow{
                 wv.url="https://twitch.tv/ricardomartinpizarro/chat"
             }
             console.log('Args: '+args)
+            //sendPushoverMessage('Se inicia pushOver en Twitch Chat Goolge Speak')
+            sendNot(app.title, 'Iniciado 2')
         }
     }
     function sendNot(from, msg){
         tCheck.running=false
+        let pushoverFileData=u.getFile('pushover')
+        if(pushoverFileData==='error')return
+        let mPushOver=pushoverFileData.split('\n')
+        console.log('PushOver data: '+pushoverFileData)
         let d=new Date(Date.now())
         let sd=''+d.getDate()+'/'+parseInt(d.getMonth()+1)+'/'+d.getFullYear()
         let sh=''+d.getHours()+':'+d.getMinutes()+'hs'
         let s='Nuevo mensaje en el chat de Twitch - '+sd+' '+sh+'De: '+from+' Mensaje: '+msg
         let cmd='sh '
-        cmd+=' /home/ns/gd/scripts/sendPushoverTwitchAlert.sh "'+s+'"'
+        cmd+=' sendPushoverTwitchAlert.sh "'+mPushOver[0]+'" "'+mPushOver[1]+'" "'+s+'"'
+        clipboard.setText(cmd)
 
-        lm.append(lm.add(from, msg))
+        //lm.append(lm.add(from, msg))
 
         /*
         #!/bin/bash
         curl -s   --form-string "token=appPushovertoken"   --form-string "user=<userPushoverid>"   --form-string "message=$1"   https://api.pushover.net/1/messages.json
         */
-        //uqp.run(cmd)
+        uqp.run(cmd)
     }
     Shortcut{
         sequence: '*'
