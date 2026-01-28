@@ -1,1 +1,1 @@
-Se sube todo 2
+Se acomodo el tamaño de ListView

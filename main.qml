@@ -11,7 +11,7 @@ ApplicationWindow{
     id: app
     visible: true
     visibility: "Maximized"
-    color: '#ccc'//'transparent'
+    color: '#000'//'transparent'
     title: 'Twicht Chat Speech'
     property int fs: width*0.02
     property string userAdmin: 'RicardoMartinPizarro'
@@ -73,9 +73,9 @@ ApplicationWindow{
         //opacity: app.editable?1.0:0.65
         WebView{
             id: wv
-            width: parent.width
+            width: parent.width*0.5
             height: parent.height//*0.5
-            x:500//app.width+1280
+            x:app.width*0.5//+1280
             //            y: 100
             //url:"https://streamlabs.com/widgets/chat-box/v1/15602D8555920F741CDF"
             //url:"https://twitch.tv/ricardomartinpizarro/chat"
@@ -93,8 +93,8 @@ ApplicationWindow{
         anchors.fill: parent
         ListView{
             id: lv
-            width: 500
-            height: 500
+            width: app.width*0.5
+            height: app.height
             spacing: 4
             delegate: compItem
             model: lm
@@ -115,8 +115,8 @@ ApplicationWindow{
                 id: compItem
                 Rectangle{
                     id: xItem
-                    width: 500//lv.width
-                    height: 100//txt1.contentHeight//*1.1
+                    width: lv.width
+                    height: txt1.contentHeight*1.1
                     color: 'black'
                     border.width: 2
                     border.color: 'red'
