@@ -65,7 +65,7 @@ ApplicationWindow{
     }
     Settings{
         id: apps
-        property string uHtml: ''        
+        property string uHtml: ''
     }
     Item{
         id: xAppWV
@@ -91,39 +91,42 @@ ApplicationWindow{
     Item{
         id: xApp
         anchors.fill: parent
-        ListView{
-            id: lv
-            width: app.width*0.5
-            height: app.height
-            spacing: 4
-            delegate: compItem
-            model: lm
-            /*Rectangle{
+        Column{
+            spacing: 10
+            width: parent.width
+            ListView{
+                id: lv
+                width: app.width*0.5
+                height: app.height*0.5
+                spacing: 4
+                delegate: compItem
+                model: lm
+                /*Rectangle{
                 anchors.fill: parent
                 color: 'green'
             }*/
-            ListModel{
-                id: lm
-                function add(f, m){
-                    return {
-                        from: f,
-                        msg: m
+                ListModel{
+                    id: lm
+                    function add(f, m){
+                        return {
+                            from: f,
+                            msg: m
+                        }
                     }
                 }
-            }
-            Component{
-                id: compItem
-                Rectangle{
-                    id: xItem
-                    width: lv.width
-                    height: txt1.contentHeight*1.1
-                    color: 'black'
-                    border.width: 2
-                    border.color: 'red'
-                    // Componente para reproducir el audio
-                    Audio {
-                        id: playMusic
-                        onStatusChanged: {
+                Component{
+                    id: compItem
+                    Rectangle{
+                        id: xItem
+                        width: lv.width
+                        height: txt1.contentHeight*1.1
+                        color: 'black'
+                        border.width: 2
+                        border.color: 'red'
+                        // Componente para reproducir el audio
+                        Audio {
+                            id: playMusic
+                            onStatusChanged: {
                                 if (playMusic.status === Audio.EndOfMedia) {
                                     //console.log("¡El audio ha terminado de reproducirse!");
                                     tClose.start()
@@ -134,46 +137,114 @@ ApplicationWindow{
                             onError: {
                                 console.error("Error de reproducción: " + errorString);
                             }
-                    }
-                    Text{
-                        id: txt1
-                        text: from +': '+msg
-                        width: parent.width*0.9
-                        wrapMode: Text.WordWrap
-                        color: 'white'
-                        anchors.centerIn: parent
-                    }
-                    Timer{
-                        id: tClose
-                        running: false
-                        repeat: false
-                        interval: 2000
-                        onTriggered: {
-                            lm.remove(index)
+                        }
+                        Text{
+                            id: txt1
+                            text: from +': '+msg
+                            width: parent.width*0.9
+                            wrapMode: Text.WordWrap
+                            color: 'white'
+                            anchors.centerIn: parent
+                        }
+                        Timer{
+                            id: tClose
+                            running: false
+                            repeat: false
+                            interval: 2000
+                            onTriggered: {
+                                lm.remove(index)
+                            }
+                        }
+                        Timer{
+                            id: tPlay
+                            running: index===0
+                            repeat: false
+                            interval: 2000
+                            onTriggered: {
+                                playMusic.play();
+                            }
+                        }
+                        Component.onCompleted: {
+                            //lv.currentIndex=index
+                            var lang = "es"; // Código de idioma
+                            var texto = encodeURIComponent(from+' dice '+msg);
+
+                            // Usamos el endpoint de Google Translate (uso educativo/personal)
+                            var url = "https://translate.google.com/translate_tts?ie=UTF-8&q="
+                                    + texto + "&tl=" + lang + "&client=tw-ob";
+
+                            // En lugar de una petición compleja, podemos asignar la URL directamente
+                            // al componente Audio, ya que Qt Multimedia maneja el stream.
+                            playMusic.source = url;
+                            //playMusic.play();
                         }
                     }
-                    Timer{
-                        id: tPlay
-                        running: index===0
-                        repeat: false
-                        interval: 2000
-                        onTriggered: {
-                            playMusic.play();
+                }
+            }
+            ListView{
+                id: lvUsers
+                width: app.width*0.5-parent.spacing
+                height: app.height*0.5
+                spacing: 4
+                delegate: compItemUser
+                model: lmUsers
+                ListModel{
+                    id: lmUsers
+                    function add(l){
+                        return {
+                            line: l
                         }
                     }
-                    Component.onCompleted: {
-                        //lv.currentIndex=index
-                        var lang = "es"; // Código de idioma
-                        var texto = encodeURIComponent(from+' dice '+msg);
-
-                        // Usamos el endpoint de Google Translate (uso educativo/personal)
-                        var url = "https://translate.google.com/translate_tts?ie=UTF-8&q="
-                                  + texto + "&tl=" + lang + "&client=tw-ob";
-
-                        // En lugar de una petición compleja, podemos asignar la URL directamente
-                        // al componente Audio, ya que Qt Multimedia maneja el stream.
-                        playMusic.source = url;
-                        //playMusic.play();
+                }
+                Component{
+                    id: compItemUser
+                    Rectangle{
+                        id: xItem
+                        width: lv.width
+                        height: 30
+                        color: 'black'
+                        border.width: 2
+                        border.color: 'red'
+                        MouseArea{
+                            anchors.fill: parent
+                            onClicked: {
+                                let user=line.split(' ')[0]
+                                toogleUserIsEnabled(user)
+                            }
+                        }
+                        Rectangle{
+                            width: parent.height*0.5
+                            height: width
+                            anchors.verticalCenter: parent.verticalCenter
+                            MouseArea{
+                                anchors.fill: parent
+                                onClicked: {
+                                    deleteUser(line.replace(' true', '').replace(' false', ''))
+                                }
+                            }
+                            Text{
+                                text: 'X'
+                                font.pixelSize: parent.width*0.8
+                                color: 'black'
+                                anchors.centerIn: parent
+                            }
+                        }
+                        Text{
+                            id: txt1
+                            text: line
+                            width: parent.width*0.9
+                            wrapMode: Text.WordWrap
+                            color: 'white'
+                            anchors.centerIn: parent
+                        }
+                        Component.onCompleted: {
+                            let e=line.indexOf(' true')>=0
+                            if(e){
+                                xItem.color='green'
+                            }else{
+                                xItem.color='red'
+                            }
+                        }
                     }
                 }
             }
@@ -221,9 +292,9 @@ ApplicationWindow{
 
                                             if(de.indexOf(app.userAdmin)>=0 && msg.indexOf('eqmlnot')>=0){
                                                 tCheck.e=true
-//                                                apps.uHtml=html
-//                                                running=true
-//                                                return
+                                                //                                                apps.uHtml=html
+                                                //                                                running=true
+                                                //                                                return
                                             }
                                             if(de.indexOf(app.userAdmin)>=0 && msg.indexOf('dqmlnot')>=0){
                                                 tCheck.e=false
@@ -236,7 +307,13 @@ ApplicationWindow{
                                             let umsg=''+de+'_'+msg
                                             if(app.uMsg!==umsg){
                                                 app.uMsg=umsg
-                                                lm.append(lm.add(de, msg))
+                                                let userIndex=getUserIndex(de)
+                                                console.log('Usuario index: '+userIndex)
+                                                if(userIndex===-1){
+                                                    addUser(de)
+                                                    lm.append(lm.add(de, msg))
+                                                }
+                                                if(userIsEnabled(de))lm.append(lm.add(de, msg))
                                                 //return
                                             }
                                             if(tCheck.e){
@@ -267,12 +344,6 @@ ApplicationWindow{
 
 
 
-    Shortcut{
-        sequence: 'Esc'
-        onActivated: {
-
-        }
-    }
     UnikQProcess{
         id: uqp
         onLogDataChanged: {
@@ -281,6 +352,7 @@ ApplicationWindow{
         }
     }
     Component.onCompleted: {
+        updateUsersList()
         let args=Qt.application.arguments
         console.log('Args: '+args)
         for(var i=0;i<args.length;i++){
@@ -296,6 +368,18 @@ ApplicationWindow{
             console.log('Args: '+args)
             //sendPushoverMessage('Se inicia pushOver en Twitch Chat Goolge Speak')
             sendNot(app.title, 'Iniciado 2')
+        }
+    }
+    Shortcut{
+        sequence: 'Esc'
+        onActivated: {
+
+        }
+    }
+    Shortcut{
+        sequence: '*'
+        onActivated: {
+            lm.append(lm.add('AAA', 'BBB'))
         }
     }
     function sendNot(from, msg){
@@ -320,10 +404,74 @@ ApplicationWindow{
         */
         uqp.run(cmd)
     }
-    Shortcut{
-        sequence: '*'
-        onActivated: {
-            lm.append(lm.add('AAA', 'BBB'))
+    function getUserIndex(user){
+        let ret=-1
+        let fd=u.getFile('./users')
+        let lines=fd.split('\n')
+        for(var i=0;i<lines.length;i++){
+            if(lines[i].indexOf(user)===0){
+                ret=i
+                break
+            }
+        }
+        return ret
+    }
+    function userIsEnabled(user){
+        let ret=false
+        let fd=u.getFile('./users')
+        let lines=fd.split('\n')
+        for(var i=0;i<lines.length;i++){
+            if(lines[i].indexOf(user)>=0 && lines[i].indexOf(user+' true')>=0){
+                ret=true
+                break
+            }
+        }
+        return ret
+    }
+    function toogleUserIsEnabled(user){
+        let fd=u.getFile('./users')
+        let lines=fd.split('\n')
+        let s=''
+        for(var i=0;i<lines.length;i++){
+            if(lines[i].indexOf(user)>=0){
+                if(lines[i].indexOf(user+' true')>=0){
+                    s+=user+' false\n'
+                }else{
+                    s+=user+' true\n'
+                }
+            }else{
+                s+=lines[i]+'\n'
+            }
+        }
+        u.setFile('./users', s)
+        updateUsersList()
+    }
+    function addUser(user){
+        let fd=u.getFile('./users')
+        let s=fd+''+user+' false'
+        console.log('Agregando '+user+': \n'+s)
+        u.setFile('./users', s)
+        updateUsersList()
+    }
+    function deleteUser(user){
+        let fd=u.getFile('./users')
+        let s=''
+        let lines=fd.split('\n')
+        for(var i=0;i<lines.length;i++){
+            let e=lines[i].indexOf(user)>=0
+            if(!e){
+                s+=lines[i]+'\n'
+            }
+        }
+        u.setFile('./users', s)
+        updateUsersList()
+    }
+    function updateUsersList(){
+        lmUsers.clear()
+        let fd=u.getFile('./users')
+        let lines=fd.split('\n')
+        for(var i=0;i<lines.length;i++){
+            if(lines[i].length>=5)lmUsers.append(lmUsers.add(lines[i]))
         }
     }
 }

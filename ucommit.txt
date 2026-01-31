@@ -1,1 +1,1 @@
-Se agrega .gitignore y pushover file
+i7: Se agrega lista de usuarios
