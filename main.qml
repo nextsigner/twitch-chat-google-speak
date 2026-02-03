@@ -28,7 +28,7 @@ ApplicationWindow{
     Unik{id: u}
     Audio {
         id: mpRing
-        source: 'file:/home/ns/nsp/uda/twitch-chat/sounds/ring_1.mp3';
+        source: u.currentFolderPath()+'/sounds/ring_1.mp3';
         autoLoad: true
         autoPlay: true
     }
@@ -118,68 +118,67 @@ ApplicationWindow{
                     id: compItem
                     Rectangle{
                         id: xItem
-                        width: lv.width
-                        height: txt1.contentHeight*1.1
-                        color: 'black'
-                        border.width: 2
-                        border.color: 'red'
-                        // Componente para reproducir el audio
+                        // ... (tus propiedades de ancho, alto y color se mantienen igual)
+
+                        // --- NUEVAS PROPIEDADES PARA EL MANEJO DE FRAGMENTOS ---
+                        property var chunks: []
+                        property int currentChunk: 0
+
+                        function playNextChunk() {
+                            if (currentChunk < chunks.length) {
+                                var lang = "es";
+                                var texto = encodeURIComponent(chunks[currentChunk]);
+                                var url = "https://translate.google.com/translate_tts?ie=UTF-8&q="
+                                        + texto + "&tl=" + lang + "&client=tw-ob";
+
+                                playMusic.source = url;
+                                playMusic.play();
+                                currentChunk++;
+                            } else {
+                                // Ya no hay más partes, iniciamos el timer para eliminar el item
+                                tClose.start();
+                            }
+                        }
+
                         Audio {
                             id: playMusic
                             onStatusChanged: {
                                 if (playMusic.status === Audio.EndOfMedia) {
-                                    //console.log("¡El audio ha terminado de reproducirse!");
-                                    tClose.start()
+                                    // En lugar de cerrar directo, intentamos el siguiente fragmento
+                                    xItem.playNextChunk();
                                 }
                             }
-
-                            // Opcional: Manejo de errores de red o formato
                             onError: {
-                                console.error("Error de reproducción: " + errorString);
+                                console.error("Error TTS: " + errorString);
+                                xItem.playNextChunk(); // Saltar al siguiente si este falló
                             }
                         }
-                        Text{
-                            id: txt1
-                            text: from +': '+msg
-                            width: parent.width*0.9
-                            wrapMode: Text.WordWrap
-                            color: 'white'
-                            anchors.centerIn: parent
+
+                        // ... (Tus otros componentes Text y Timers)
+
+                        Component.onCompleted: {
+                            let fullText = from + ' dice ' + msg;
+
+                            // Lógica de fragmentación (200 caracteres máximo)
+                            let maxLen = 180; // Usamos 180 para estar seguros con caracteres especiales
+                            let regex = new RegExp('.{1,' + maxLen + '}(\\s|$)|.{1,' + maxLen + '}', 'g');
+                            chunks = fullText.match(regex);
+
+                            // El Timer tPlay ahora solo dispara la primera parte
                         }
-                        Timer{
-                            id: tClose
-                            running: false
-                            repeat: false
-                            interval: 2000
-                            onTriggered: {
-                                lm.remove(index)
-                            }
-                        }
+
                         Timer{
                             id: tPlay
-                            running: index===0
+                            running: index === 0
                             repeat: false
-                            interval: 2000
+                            interval: 1000
                             onTriggered: {
-                                playMusic.play();
+                                xItem.playNextChunk();
                             }
-                        }
-                        Component.onCompleted: {
-                            //lv.currentIndex=index
-                            var lang = "es"; // Código de idioma
-                            var texto = encodeURIComponent(from+' dice '+msg);
-
-                            // Usamos el endpoint de Google Translate (uso educativo/personal)
-                            var url = "https://translate.google.com/translate_tts?ie=UTF-8&q="
-                                    + texto + "&tl=" + lang + "&client=tw-ob";
-
-                            // En lugar de una petición compleja, podemos asignar la URL directamente
-                            // al componente Audio, ya que Qt Multimedia maneja el stream.
-                            playMusic.source = url;
-                            //playMusic.play();
                         }
                     }
                 }
+
             }
             ListView{
                 id: lvUsers
@@ -311,7 +310,7 @@ ApplicationWindow{
                                                 console.log('Usuario index: '+userIndex)
                                                 if(userIndex===-1){
                                                     addUser(de)
-                                                    lm.append(lm.add(de, msg))
+                                                    lm.append(lm.add(de, msg.replace(/\n/g, '').replace(/\r/g, '').replace(/\t/g, '')))
                                                 }
                                                 if(userIsEnabled(de))lm.append(lm.add(de, msg))
                                                 //return
@@ -367,7 +366,8 @@ ApplicationWindow{
             }
             console.log('Args: '+args)
             //sendPushoverMessage('Se inicia pushOver en Twitch Chat Goolge Speak')
-            sendNot(app.title, 'Iniciado 2')
+            //sendNot(app.title, 'Iniciado 2')
+            mpRing.play()
         }
     }
     Shortcut{
@@ -448,7 +448,8 @@ ApplicationWindow{
     }
     function addUser(user){
         let fd=u.getFile('./users')
-        let s=fd+''+user+' false'
+        let s=fd+'\n'+user+' false'
+        s=s.replace(/\\n\\n/g, '')
         console.log('Agregando '+user+': \n'+s)
         u.setFile('./users', s)
         updateUsersList()

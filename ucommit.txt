@@ -1,1 +1,1 @@
-i7: Se agrega lista de usuarios
+i7: Se agrega el límite de 180 caracteres.
